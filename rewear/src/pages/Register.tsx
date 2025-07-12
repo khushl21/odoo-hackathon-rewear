@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +19,7 @@ const Register = () => {
     password: "",
     confirmPassword: ""
   });
+  const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -24,10 +28,28 @@ const Register = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log("Registration attempt:", formData);
+    setError("");
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      // Create user profile in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        points: 0,
+        createdAt: new Date().toISOString(),
+      });
+      // Redirect to dashboard or home
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      setError(err.message || "Registration failed");
+    }
   };
 
   return (
@@ -155,6 +177,10 @@ const Register = () => {
                     required
                   />
                 </div>
+
+                {error && (
+                  <div className="text-red-500 text-sm text-center">{error}</div>
+                )}
 
                 <div className="flex items-center space-x-2">
                   <input 

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Header } from "@/components/Header";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +15,7 @@ const Login = () => {
     email: "",
     password: ""
   });
+  const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -21,10 +24,16 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", formData);
+    setError("");
+    try {
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      // Redirect to dashboard or home
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      setError(err.message || "Login failed");
+    }
   };
 
   return (
@@ -103,6 +112,10 @@ const Login = () => {
                     </Button>
                   </div>
                 </div>
+
+                {error && (
+                  <div className="text-red-500 text-sm text-center">{error}</div>
+                )}
 
                 <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center space-x-2 cursor-pointer">
